@@ -6,13 +6,13 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="unihiker",
-    version="0.0.25.1",
+    version="0.0.26",
     author="Angelo Qiao, Raziur Totha",
     author_email="angelo.qiao@dfrobot.com, raziur.totha@dfrobot.com",
     description="Library for Unihiker",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://wiki.unihiker.com",
+    url="https://github.com/UNIHIKER/unihiker-pypi-lib",
     project_urls={
         "Bug Tracker": "https://mc.dfrobot.com.cn/forum-221-1.html",
     },
@@ -33,6 +33,7 @@ setuptools.setup(
                         'pillow', 
                         'qrcode', 
                         'pydub', 
+                        'pygame',
                         'pyaudio; platform_system=="Windows"',
                         'pyaudio; platform_system=="Linux"'],
     python_requires=">=3.6",

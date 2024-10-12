@@ -3,7 +3,6 @@ README.md
 pyproject.toml
 setup.py
 src/unihiker/Audio.py
-src/unihiker/Audio_draft.py
 src/unihiker/GUI.py
 src/unihiker/HYQiHei_50S.ttf
 src/unihiker/Segment7-4Gml.otf

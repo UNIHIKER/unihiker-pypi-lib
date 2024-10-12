@@ -1,15 +1,16 @@
 import time
 import platform
-
+import os
+# Set the environment variable before importing pygame
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
+import pygame
 if platform.system().lower().startswith('win') or platform.system().lower().startswith('lin'):
     import pyaudio
-# elif platform.system().lower().startswith('lin'):
-#     import pyaudio
 
 from pydub import AudioSegment  
 from math import ceil
 
-#Mute alsa
+# Mute alsa
 import ctypes
 
 ERROR_HANDLER_FUNC = ctypes.CFUNCTYPE(None, ctypes.c_char_p, ctypes.c_int,
@@ -26,7 +27,9 @@ try:
     asound.snd_lib_error_set_handler(c_error_handler)
 except OSError:
     pass
-#End mute alsa
+# End mute alsa
+
+
 
 class Audio():
     if platform.system().lower().startswith('win') or platform.system().lower().startswith('lin'):
@@ -42,21 +45,17 @@ class Audio():
             self.recording = False
             self.target_volume = -20
             self.sound = None
-            self.player = None
 
-            self.play_sound = None
-            self.play_rate = None
-            self.play_chunk = 2048
-            self.play_format = None
-            self.play_channels = 1
-            self.play_frames = []
-            self.play_file = None
             self.p = pyaudio.PyAudio()
-            # if platform.system().lower().startswith('win'):
-            #     self.p = pyaudio.PyAudio()
-            # elif platform.system().lower().startswith('lin'):
-            #     self.p = pyaudio.PyAudio()
-            
+
+            pygame.mixer.init()
+            self.audio = None
+            self.channel = None
+            self.start_time = None
+            self.paused_time = None  
+            self.is_paused = False  
+
+
             def callback(in_data, frame_count, time_info, status):
                 if self.recording:
                     self.frames.append(in_data)
@@ -64,10 +63,6 @@ class Audio():
                         self.recording = False
                 self.frame = in_data
                 return (in_data, pyaudio.paContinue)
-                # if platform.system().lower().startswith('win'):
-                #     return (in_data, pyaudio.paContinue)
-                # elif platform.system().lower().startswith('lin'):
-                #     return (in_data, pyaudio.paContinue)
 
             self.stream = self.p.open(format=self.format,
                             channels=self.channels,
@@ -91,10 +86,6 @@ class Audio():
         def stop_record(self):
             self.recording = False
             self.sound = AudioSegment(b''.join(self.frames), sample_width=self.p.get_sample_size(pyaudio.paInt16), channels=self.channels, frame_rate=self.rate)
-            # if platform.system().lower().startswith('win'):
-            #     self.sound = AudioSegment(b''.join(self.frames), sample_width=self.p.get_sample_size(pyaudio.paInt16), channels=self.channels, frame_rate=self.rate)
-            # elif platform.system().lower().startswith('lin'):\
-            #     self.sound = AudioSegment(b''.join(self.frames), sample_width=self.p.get_sample_size(pyaudio.paInt16), channels=self.channels, frame_rate=self.rate)
             if self.target_volume is not None:
                 self.sound = self.auto_volume(self.sound, self.target_volume) 
             self.sound.export(self.file, format='wav')
@@ -116,71 +107,65 @@ class Audio():
                 result = (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
                 result = max(min(result, 100), 0)
                 return result
-
-            return round( mapping(self.sound_dBFS(), -50, -20, 0, 100), 2)
+            file_path = '/opt/unihiker/Version'
+            if os.path.exists(file_path):
+                try:
+            
+                    with open(file_path, 'r') as file:
+                        content = file.read()
+                    if 'box' in content:
+                        return round( mapping(self.sound_dBFS(), -17, -5, 0, 100), 2) 
+                    else:
+                        return round( mapping(self.sound_dBFS(), -50, -20, 0, 100), 2) 
+                except Exception as e:
+                    print(f"An error occurred while reading the file: {e}")
+            else:
+                return round( mapping(self.sound_dBFS(), -50, -20, 0, 100), 2) 
+            
 
         def sound_dBFS(self):
             if self.frame is None:
                 return -96.00
             else:
                 return AudioSegment(self.frame, sample_width=self.p.get_sample_size(pyaudio.paInt16), channels=self.channels, frame_rate=self.rate).dBFS
-                # if platform.system().lower().startswith('win'):
-                #     return AudioSegment(self.frame, sample_width=self.p.get_sample_size(pyaudio.paInt16), channels=self.channels, frame_rate=self.rate).dBFS
-                # elif platform.system().lower().startswith('lin'):
-                #     return AudioSegment(self.frame, sample_width=self.p.get_sample_size(pyaudio.paInt16), channels=self.channels, frame_rate=self.rate).dBFS
             
             
+        def play(self, file_path):
+            pygame.mixer.music.load(file_path)
+            pygame.mixer.music.play()
+            self.start_time = time.time()
+            while pygame.mixer.music.get_busy():  
+                pygame.time.Clock().tick(10)  
 
-        def play(self, file):
-            self.start_play(file)
-            while self.player.is_active():
-                time.sleep(0.001)
-            self.stop_play()
-
-        def start_play(self, file):
-            def callback(in_data, frame_count, time_info, status):
-                if not self.play_frames:
-                    return (b'', pyaudio.paComplete)
-                    # if platform.system().lower().startswith('win'):
-                    #     return (b'', pyaudio.paComplete)
-                    # elif platform.system().lower().startswith('lin'):
-                    #     return (b'', pyaudio.paComplete)
-                data = self.play_frames.pop(0)
-                return (data, pyaudio.paContinue)
-                # if platform.system().lower().startswith('win'):
-                #     return (data, pyaudio.paContinue)
-                # elif platform.system().lower().startswith('win'):
-                #     return (data, pyaudio.paContinue)
-
-            self.play_sound = AudioSegment.from_file(file)
-
-            if self.play_sound.channels == 1:
-                self.play_sound = self.play_sound.set_channels(2)
-
-            chunk_size = self.play_chunk * self.play_sound.sample_width * self.play_sound.channels
-
-            number_of_chunks = ceil(len(self.play_sound.raw_data) / float(chunk_size))
-            self.play_frames = [self.play_sound.raw_data[i * chunk_size:(i + 1) * chunk_size] for i in range(int(number_of_chunks))]
-
-            self.player = self.p.open(format = self.p.get_format_from_width(self.play_sound.sample_width), 
-                channels = self.play_sound.channels, 
-                rate = self.play_sound.frame_rate,
-                output = True,
-                frames_per_buffer=self.play_chunk,
-                stream_callback = callback)
-        
-            self.player.start_stream()
-        
-        def stop_play(self):
-            self.player.stop_stream()
-            self.play_frames = []
-            self.player.close()
+        def start_play(self, file_path):
+            self.audio = pygame.mixer.Sound(file_path)
+            self.channel = self.audio.play()
+            self.start_time = time.time()  
 
         def pause_play(self):
-            self.player.stop_stream()
+            if self.channel and not self.is_paused: 
+                self.paused_time = time.time() - self.start_time
+                self.channel.pause()
+                self.is_paused = True  
 
         def resume_play(self):
-            self.player.start_stream()
-        
+            if self.channel and self.is_paused: 
+                self.start_time = time.time() - self.paused_time
+                self.paused_time = None
+                self.channel.unpause()
+                self.is_paused = False  
+
         def play_time_remain(self):
-            return round(len(self.play_frames)*self.play_chunk/self.play_sound.frame_rate, 2)
+            if self.is_paused:
+                return round(max(0, self.audio.get_length() - self.paused_time), 2)
+            elif self.channel and self.channel.get_busy():
+                elapsed_time = time.time() - self.start_time
+                return round(max(0, self.audio.get_length() - elapsed_time), 2)
+            return 0
+
+        def stop_play(self):
+            
+            if self.channel:
+                self.channel.stop()
+                self.start_time = None  
+                self.paused_time = None 

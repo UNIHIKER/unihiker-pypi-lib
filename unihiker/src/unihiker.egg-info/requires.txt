@@ -2,6 +2,7 @@ fontTools
 pillow
 qrcode
 pydub
+pygame
 
 [:platform_system == "Linux"]
 pyaudio
