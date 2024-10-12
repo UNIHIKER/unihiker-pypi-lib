@@ -1,0 +1,10 @@
+fontTools
+pillow
+qrcode
+pydub
+
+[:platform_system == "Linux"]
+pyaudio
+
+[:platform_system == "Windows"]
+pyaudio

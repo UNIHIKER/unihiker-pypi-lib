@@ -1,0 +1,22 @@
+Metadata-Version: 2.1
+Name: unihiker
+Version: 0.0.25.1
+Summary: Library for Unihiker
+Home-page: https://wiki.unihiker.com
+Author: Angelo Qiao, Raziur Totha
+Author-email: angelo.qiao@dfrobot.com, raziur.totha@dfrobot.com
+Project-URL: Bug Tracker, https://mc.dfrobot.com.cn/forum-221-1.html
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Intended Audience :: Education
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+# unihiker
+This is a library for unihiker from DFRobot (https://www.unihiker.com). Now there is an easy-to-use GUI inside based on tkinter and ttkbootstrap. This library aims to make unihiker suitable for education scenario.
+The parameters in GUI's function is highly compatible with Tkinter's Button and Canvas widget. You could find the reference from here to get the detail configuration and parameters:
+https://anzeljg.github.io/rin2/book2/2405/docs/tkinter/canvas.html
+https://anzeljg.github.io/rin2/book2/2405/docs/tkinter/button.html
