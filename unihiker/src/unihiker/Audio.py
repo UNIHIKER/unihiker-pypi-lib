@@ -107,23 +107,23 @@ class Audio():
                 result = (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
                 result = max(min(result, 100), 0)
                 return result
-            file_path = '/opt/unihiker/Version'
             box_flag = False
             try:
+                file_path = '/opt/unihiker/Version'
                 if os.path.exists(file_path):
                     with open(file_path, 'r') as file:
-                        content = file.read()
-                    if 'box' in content:
-                        box_flag = True  
-                    else:
-                        box_flag = False
-                if box_flag:
-                    return round( mapping(self.sound_dBFS(), -17, -5, 0, 100), 2)
-                else:
-                    return round( mapping(self.sound_dBFS(), -50, -20, 0, 100), 2)
+                        for line in file:
+                            if 'box' in line:
+                                box_flag = True
+                                break
             except Exception as e:
-                    print(f"An error occurred while reading the file: {e}")     
+                    print(f"An error occurred while reading the file: {e}")  
 
+            if box_flag:
+                return round( mapping(self.sound_dBFS(), -17, -5, 0, 100), 2)
+            else:
+                return round( mapping(self.sound_dBFS(), -50, -20, 0, 100), 2)
+   
         def sound_dBFS(self):
             if self.frame is None:
                 return -96.00
