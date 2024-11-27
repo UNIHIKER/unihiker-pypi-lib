@@ -59,7 +59,7 @@ class Audio():
             def callback(in_data, frame_count, time_info, status):
                 if self.recording:
                     self.frames.append(in_data)
-                    if self.duration is not None and len(self.frames) >= int(self.rate / self.chunk * self.duration):
+                    if self.duration is not None and len(self.frames) >= ceil(self.rate / self.chunk * self.duration):
                         self.recording = False
                 self.frame = in_data
                 return (in_data, pyaudio.paContinue)
