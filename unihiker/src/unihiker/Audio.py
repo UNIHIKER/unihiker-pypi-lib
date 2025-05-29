@@ -1,4 +1,5 @@
-import time
+import subprocess
+import re,sys,time
 import platform
 import os
 # Set the environment variable before importing pygame
@@ -31,6 +32,9 @@ except OSError:
 
 
 
+
+
+
 class Audio():
     if platform.system().lower().startswith('win') or platform.system().lower().startswith('lin'):
         def __init__(self, rate=16000, chunk=8192, format=pyaudio.paInt16):
@@ -59,7 +63,7 @@ class Audio():
             def callback(in_data, frame_count, time_info, status):
                 if self.recording:
                     self.frames.append(in_data)
-                    if self.duration is not None and len(self.frames) >= ceil(self.rate / self.chunk * self.duration):
+                    if self.duration is not None and len(self.frames) >= int(self.rate / self.chunk * self.duration):
                         self.recording = False
                 self.frame = in_data
                 return (in_data, pyaudio.paContinue)
@@ -70,6 +74,31 @@ class Audio():
                             input=True,
                             frames_per_buffer=self.chunk,
                             stream_callback = callback)
+
+        def get_audio_devices(self):
+            result = subprocess.run(['pactl', 'list', 'sources', 'short'], capture_output=True, text=True)
+            return result.stdout
+
+        def parse_devices(self,output):
+            devices = []
+            lines = output.strip().split('\n')
+            for line in lines[1:]:  
+                parts = line.split()
+                if len(parts) >= 5:
+                    device_id = parts[0]
+                    device_name = parts[1]
+                    status = parts[4]
+                    if 'input' in device_name:
+                        devices.append((device_id, device_name, 'input'))
+                    elif 'output' in device_name:
+                        devices.append((device_id, device_name, 'output'))
+            return devices
+
+        def find_device_with_keyword(self,devices, keyword):
+            for device_id, device_name, device_type in devices:
+                if keyword in device_name:
+                    return device_name
+            return None
 
         def auto_volume(self, sound, target_dBFS):
             change_in_dBFS = target_dBFS - sound.dBFS
@@ -107,19 +136,13 @@ class Audio():
                 result = (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
                 result = max(min(result, 100), 0)
                 return result
-            box_flag = False
-            try:
-                file_path = '/opt/unihiker/Version'
-                if os.path.exists(file_path):
-                    with open(file_path, 'r') as file:
-                        for line in file:
-                            if 'box' in line:
-                                box_flag = True
-                                break
-            except Exception as e:
-                    print(f"An error occurred while reading the file: {e}")  
+            
+            output = self.get_audio_devices()
+            devices = self.parse_devices(output)
 
-            if box_flag:
+            camrea_device = self.find_device_with_keyword(devices, 'Camrea')
+
+            if camrea_device:
                 return round( mapping(self.sound_dBFS(), -17, -5, 0, 100), 2)
             else:
                 return round( mapping(self.sound_dBFS(), -50, -20, 0, 100), 2)
