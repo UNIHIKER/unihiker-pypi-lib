@@ -6,6 +6,7 @@ src/unihiker/Audio.py
 src/unihiker/GUI.py
 src/unihiker/HYQiHei_50S.ttf
 src/unihiker/Segment7-4Gml.otf
+src/unihiker/UNIconfig.py
 src/unihiker/__init__.py
 src/unihiker.egg-info/PKG-INFO
 src/unihiker.egg-info/SOURCES.txt

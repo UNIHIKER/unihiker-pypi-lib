@@ -132,21 +132,40 @@ class Audio():
             self.sound.export(self.file, format='wav')
 
         def sound_level(self):
+            file_path = '/opt/unihiker/Version'
+
             def mapping( x,  in_min,  in_max,  out_min,  out_max):
                 result = (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
                 result = max(min(result, 100), 0)
                 return result
-            
-            output = self.get_audio_devices()
-            devices = self.parse_devices(output)
 
-            camrea_device = self.find_device_with_keyword(devices, 'Camrea')
+            def is_box_version(file_path):
+                """Check if the system is a 'box' version."""
+                try:
+                    if os.path.exists(file_path):
+                        with open(file_path, 'r') as file:
+                            for line in file:
+                                if 'box' in line:
+                                    return True
+                    return False
+                except Exception as e:
+                    print(f"An error occurred while reading the file: {e}")
+                    return False
 
-            if camrea_device:
-                return round( mapping(self.sound_dBFS(), -17, -5, 0, 100), 2)
+            box_flag = is_box_version(file_path)
+
+            if box_flag:
+                output = self.get_audio_devices()
+                devices = self.parse_devices(output)
+                camera_device = self.find_device_with_keyword(devices, 'YX-231121-J_USB_2.0_Camrea')
+
+                if camera_device:
+                    return round(mapping(self.sound_dBFS(), -17, -5, 0, 100), 2)
+                else:
+                    return round(mapping(self.sound_dBFS(), -50, -20, 0, 100), 2)
             else:
-                return round( mapping(self.sound_dBFS(), -50, -20, 0, 100), 2)
-   
+                return round(mapping(self.sound_dBFS(), -50, -20, 0, 100), 2)
+            
         def sound_dBFS(self):
             if self.frame is None:
                 return -96.00

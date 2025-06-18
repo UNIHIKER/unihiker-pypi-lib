@@ -717,7 +717,7 @@ class GUI():
             
             self.postprocess_onclick()
         
-        def config(self, *, x=None, y=None, r=None, h=None, m=None, s=None, color=None, fill=None, style=None, onclick=None, **kw):
+        def config(self, *, x=None, y=None, r=None, h=None, m=None, s=None, color=None, fill=None, style=None, onclick=None, state=None, **kw):
             self.parent.process_kw(locals(), kw)
             self.preprocess(kw)
 
@@ -790,11 +790,11 @@ class GUI():
             if self.kw_current:
                 for i, id in enumerate(self.ids):
                     if i == 0:
-                        self.parent.canvas.itemconfigure(id, outline=self.kw['outline'], fill=self.kw['fill'])
+                        self.parent.canvas.itemconfigure(id, outline=self.kw['outline'], fill=self.kw['fill'], state=state)
                     elif i == 1:
-                        self.parent.canvas.itemconfigure(id, outline=self.kw['outline'], fill=self.kw['outline'])
+                        self.parent.canvas.itemconfigure(id, outline=self.kw['outline'], fill=self.kw['outline'], state=state)
                     else:
-                        self.parent.canvas.itemconfigure(id, fill=self.kw['outline'])
+                        self.parent.canvas.itemconfigure(id, fill=self.kw['outline'], state=state)
 
             self.postprocess_onclick()
 
@@ -859,7 +859,7 @@ class GUI():
 
             self.postprocess_onclick()
         
-        def config(self, *, x=None, y=None, w=None, h=None, r=None, color=None, fill=None, width=None, onclick=None, **kw):
+        def config(self, *, x=None, y=None, w=None, h=None, r=None, color=None, fill=None, width=None, onclick=None, state=None, **kw):
             self.parent.process_kw(locals(), kw)
             self.preprocess(kw)
             if self.arg_current:
@@ -887,22 +887,27 @@ class GUI():
 
             if self.kw_current:
                 kw_temp = self.kw.copy()
-                if kw_temp['fill'] != '':
-                    kw_temp['outline'] = kw_temp['fill']
-                    kw_temp['state'] = 'normal'
+
+                if state is not None:
+                    kw_temp['state'] = state
                 else:
-                    kw_temp['state'] = 'hidden'
+                    if kw_temp['fill'] != '':
+                        kw_temp['outline'] = kw_temp['fill']
+                        kw_temp['state'] = 'normal'
+                    else:
+                        kw_temp['state'] = 'hidden'
+
                 for i in range(0, 5):
                     self.parent.canvas.itemconfigure(self.ids[i], **kw_temp)
-                
+
                 for i in range(5, 9):
                     self.parent.canvas.itemconfigure(self.ids[i], **self.kw)
-                
+
                 kw_temp = self.kw.copy()
                 kw_temp['fill'] = kw_temp.pop('outline')
                 for i in range(9, 13):
                     self.parent.canvas.itemconfigure(self.ids[i], **kw_temp)
-
+                    
             self.postprocess_onclick()
 
     def draw_round_rect(self, *, x=None, y=None, w=None, h=None, r=None, color=None, width=None, onclick=None, **kw):
@@ -924,7 +929,9 @@ class GUI():
         
         def config(self, *, x=None, y=None, w=None, h=None, text=None, onclick=None, origin=None, **kw):
             self.parent.process_kw(locals(), kw)
-            self.text = kw.pop('text', '')
+            text = kw.pop('text', '')
+            if len(text) > 0:
+                self.text = text
             img = qrcode.make(self.text)
             img = img.resize(img.size)
             super().config(image=img, **kw)
@@ -960,15 +967,23 @@ class GUI():
         def remove(self):
             self.button.place_forget()
             self.button.destroy()
-        def config(self, *, x=None, y=None, w=None, h=None, origin=None, onclick=None, **kw):
+        def config(self, *, x=None, y=None, w=None, h=None, origin=None, onclick=None, state=None, **kw):
             self.parent.process_kw(locals(), kw)
             self.preprocess(kw)
             if self.arg_current:
                 self.button.place(x=self.arg['x'], y=self.arg['y'], width=self.arg['w'], height=self.arg['h'], anchor=self.arg['anchor'])
             if self.kw_current:
+                if state == 'hidden':
+                    self.button.place_forget()
+                else:
+                    self.button.place(
+                        x=self.arg['x'],
+                        y=self.arg['y'],
+                        width=self.arg['w'],
+                        height=self.arg['h'],
+                        anchor=self.arg['anchor']
+                    )
                 self.button.configure(**self.kw_current)
-
-            
     def add_button(self, *, x=None, y=None, w=None, h=None, origin=None, onclick=None, **kw):
         self.process_kw(locals(), kw)
         return GUI.WidgetButton(self, **kw)
