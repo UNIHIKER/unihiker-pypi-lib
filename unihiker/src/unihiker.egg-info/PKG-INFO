@@ -1,6 +1,6 @@
-Metadata-Version: 2.2
+Metadata-Version: 2.1
 Name: unihiker
-Version: 0.0.28.3
+Version: 0.0.28.5
 Summary: Library for Unihiker M10
 Home-page: https://github.com/UNIHIKER/unihiker-pypi-lib
 Author: unihiker Team
@@ -14,23 +14,6 @@ Classifier: Topic :: Software Development :: Libraries :: Python Modules
 Requires-Python: >=3.6
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: fontTools
-Requires-Dist: pillow
-Requires-Dist: qrcode
-Requires-Dist: pydub
-Requires-Dist: pygame
-Requires-Dist: pyaudio; platform_system == "Windows"
-Requires-Dist: pyaudio; platform_system == "Linux"
-Dynamic: author
-Dynamic: author-email
-Dynamic: classifier
-Dynamic: description
-Dynamic: description-content-type
-Dynamic: home-page
-Dynamic: project-url
-Dynamic: requires-dist
-Dynamic: requires-python
-Dynamic: summary
 
 # unihiker
 This is a library for unihiker M10 from DFRobot (https://www.unihiker.com). Now there is an easy-to-use GUI inside based on tkinter and ttkbootstrap. This library aims to make unihiker suitable for education scenario.

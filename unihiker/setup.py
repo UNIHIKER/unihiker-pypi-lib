@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="unihiker",
-    version="0.0.28.3",
+    version="0.0.28.5",
     author="unihiker Team",
     author_email="unihiker@dfrobot.com",
     description="Library for Unihiker M10",
