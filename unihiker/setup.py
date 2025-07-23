@@ -6,15 +6,15 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="unihiker",
-    version="0.0.28.0",
-    author="Angelo Qiao, Raziur Totha",
-    author_email="angelo.qiao@dfrobot.com, raziur.totha@dfrobot.com",
-    description="Library for Unihiker",
+    version="0.0.28.3",
+    author="unihiker Team",
+    author_email="unihiker@dfrobot.com",
+    description="Library for Unihiker M10",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/UNIHIKER/unihiker-pypi-lib",
     project_urls={
-        "Bug Tracker": "https://mc.dfrobot.com.cn/forum-221-1.html",
+        "Bug Tracker": "https://github.com/UNIHIKER/unihiker-pypi-lib",
     },
     classifiers=[
         "Programming Language :: Python :: 3",

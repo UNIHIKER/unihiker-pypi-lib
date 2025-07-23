@@ -1,7 +1,7 @@
 import os
 import platform
 
-class UNIconfig:
+class UNIConfig:
     def __init__(self):
         pass
 

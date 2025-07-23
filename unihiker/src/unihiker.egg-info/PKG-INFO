@@ -1,11 +1,11 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.2
 Name: unihiker
-Version: 0.0.28.0
-Summary: Library for Unihiker
+Version: 0.0.28.3
+Summary: Library for Unihiker M10
 Home-page: https://github.com/UNIHIKER/unihiker-pypi-lib
-Author: Angelo Qiao, Raziur Totha
-Author-email: angelo.qiao@dfrobot.com, raziur.totha@dfrobot.com
-Project-URL: Bug Tracker, https://mc.dfrobot.com.cn/forum-221-1.html
+Author: unihiker Team
+Author-email: unihiker@dfrobot.com
+Project-URL: Bug Tracker, https://github.com/UNIHIKER/unihiker-pypi-lib
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
@@ -21,13 +21,23 @@ Requires-Dist: pydub
 Requires-Dist: pygame
 Requires-Dist: pyaudio; platform_system == "Windows"
 Requires-Dist: pyaudio; platform_system == "Linux"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: project-url
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
 
 # unihiker
-This is a library for unihiker from DFRobot (https://www.unihiker.com). Now there is an easy-to-use GUI inside based on tkinter and ttkbootstrap. This library aims to make unihiker suitable for education scenario.
+This is a library for unihiker M10 from DFRobot (https://www.unihiker.com). Now there is an easy-to-use GUI inside based on tkinter and ttkbootstrap. This library aims to make unihiker suitable for education scenario.
 The parameters in GUI's function is highly compatible with Tkinter's Button and Canvas widget. You could find the reference from here to get the detail configuration and parameters:
 https://anzeljg.github.io/rin2/book2/2405/docs/tkinter/canvas.html
 https://anzeljg.github.io/rin2/book2/2405/docs/tkinter/button.html
 
 ## Notice
 
-Please note that this library is only supported on the unihiker system. It is not compatible with other systems at this time.
+Note: This library is developed solely to support the unihiker M10 system and does not guarantee compatibility with other systems and hardware.
