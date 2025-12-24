@@ -3,6 +3,7 @@ import time
 import tkinter as tk
 from tkinter import ttk, font
 from time import sleep
+import numpy as np
 from PIL import Image, ImageTk, ImageOps
 from pathlib import Path
 import math
@@ -415,11 +416,28 @@ class GUI():
                 image = self.kw_ex['image_raw']
             
             if image is not None:
-                if isinstance(image, str):
+                if isinstance(image, Image.Image):
+                    pass
+                elif isinstance(image, str):
                     if image == "":
                         image = Image.new('RGBA', (10, 10), (255, 255, 255, 0))
                     else:
                         image = Image.open(image)
+                else:
+                    try:
+                        if isinstance(image, np.ndarray):
+                            if len(image.shape) == 3 and image.shape[2] == 3:
+                                image = Image.fromarray(image[:, :, ::-1])
+                            elif len(image.shape) == 3 and image.shape[2] == 4:
+                                image = Image.fromarray(image[:, :, [2, 1, 0, 3]])
+                            else:
+                                image = Image.fromarray(image)
+                        else:
+                            image = Image.fromarray(image)
+                    except Exception as e:
+                        print(f"Warning: Failed to convert image to PIL Image: {e}")
+                        image = Image.new('RGBA', (10, 10), (255, 255, 255, 0))
+                
                 self.kw_ex.update(self.kw_ex_current)
                 w, h = (self.kw_ex['w'], self.kw_ex['h'])
                 if w is not None or h is not None:

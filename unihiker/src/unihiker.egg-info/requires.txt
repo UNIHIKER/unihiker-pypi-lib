@@ -1,5 +1,6 @@
 fontTools
 pillow
+numpy
 qrcode
 pydub
 pygame
