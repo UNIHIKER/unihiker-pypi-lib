@@ -1,4 +1,4 @@
-from threading import Thread
+from threading import Thread, Event
 import time
 import tkinter as tk
 from tkinter import ttk, font
@@ -20,32 +20,39 @@ class GUI():
     font_name = None
 
     def __init__(self, w=240, h=320):
+        startup_done = Event()
+        startup_errors = []
+
         def mainloopThread():
+            # 系统不预制旗黑时：先把包内字体装进 fontconfig，再创建 Tk，避免拷贝后不刷缓存 + execl 死循环
+            hy_path = Path(__file__).parent / "HYQiHei_50S.ttf"
+            seg_path = Path(__file__).parent / "Segment7-4Gml.otf"
+            if platform.system() == "Linux":
+                self._ensure_linux_font(hy_path)
+                self._ensure_linux_font(seg_path)
+
             GUI.global_master = tk.Tk()
             families = {'HYQiHei', '汉仪旗黑 50S', '汉仪旗黑', 'HYQiHei 50S'}
             for family in families:
                 if family in font.families():
                     self.font_name = family
-                    # print("found font:" + family)
                     break
             else:
-                self.font_name = self.load_font(Path(__file__).parent/"HYQiHei_50S.ttf")
-                # print("loaded font:" + family)
+                self.font_name = self.load_font(hy_path)
 
             families = {'Segment7'}
             for family in families:
                 if family in font.families():
                     self.font_digit_name = family
-                    # print("found font:" + family)
                     break
             else:
-                self.font_digit_name = self.load_font(Path(__file__).parent/"Segment7-4Gml.otf")
-                # print("loaded font:" + family)
+                self.font_digit_name = self.load_font(seg_path)
             
             style = ttk.Style(GUI.global_master)
             style.configure('.', font=(self.font_name, 11))
             GUI.global_master.geometry(str(w)+'x'+str(h))
             GUI.global_master.resizable(0, 0)
+            startup_done.set()
             # GUI.global_master.iconify()
             # GUI.global_master.update()
             # GUI.global_master.deiconify()
@@ -54,16 +61,36 @@ class GUI():
             else:
                 print("Mac OS can only run UI on the main thread. Use gui.update() to update GUI")
         
+        def run_mainloop():
+            try:
+                mainloopThread()
+            except Exception as exc:
+                if startup_done.is_set():
+                    raise
+                startup_errors.append(exc)
+                if GUI.global_master is not None:
+                    try:
+                        GUI.global_master.destroy()
+                    except Exception:
+                        pass
+                GUI.global_master = None
+            finally:
+                # 初始化失败也必须唤醒调用线程，不能让 GUI() 永久等待。
+                startup_done.set()
+
         if GUI.thd is None:
             if platform.system() != "Darwin":
-                GUI.thd = Thread(target=mainloopThread)   # gui thread
+                GUI.thd = Thread(target=run_mainloop)   # gui thread
                 GUI.thd.daemon = True  # background thread will exit if main thread exits
                 GUI.thd.start()  # start tk loop
             else:
-                GUI.thd = mainloopThread
+                GUI.thd = run_mainloop
                 GUI.thd()
-            while GUI.global_master is None:
-                sleep(0.01)
+            startup_done.wait()
+            if startup_errors or GUI.global_master is None:
+                GUI.thd = None
+                error = startup_errors[0] if startup_errors else None
+                raise RuntimeError("GUI initialization failed") from error
 
             def check_alive():
                 GUI.global_master.after(500, check_alive)
@@ -94,35 +121,110 @@ class GUI():
                 if self.master.dooneevent(_tkinter.DONT_WAIT+_tkinter.ALL_EVENTS) == 0:
                     break
 
-    def load_font(self, path):
-        import os
+    @staticmethod
+    def _font_families_from_file(font_path):
         from contextlib import redirect_stderr
         from fontTools import ttLib
+        font = ttLib.TTFont(str(font_path), ignoreDecompileErrors=True)
+        with redirect_stderr(None):
+            names = font['name'].names
+        families = set()
+        for x in names:
+            if x.nameID == 1 or x.nameID == 16:
+                try:
+                    families.add(x.toUnicode())
+                except UnicodeDecodeError:
+                    families.add(x.string.decode(errors='ignore'))
+        return families
 
+    @staticmethod
+    def _linux_font_dest(path):
+        """优先写用户字体目录；root 且可写时落到系统目录。"""
+        import os
+        name = Path(path).name
+        if os.geteuid() == 0:
+            sys_dir = Path("/usr/share/fonts/truetype/unihiker")
+            try:
+                sys_dir.mkdir(parents=True, exist_ok=True)
+                probe = sys_dir / ".unihiker_write_test"
+                probe.write_text("")
+                probe.unlink()
+                return sys_dir / name
+            except OSError:
+                pass
+        user_dir = Path.home() / ".local" / "share" / "fonts" / "unihiker"
+        user_dir.mkdir(parents=True, exist_ok=True)
+        return user_dir / name
 
-        def font_name(font_path):
-            font = ttLib.TTFont(font_path, ignoreDecompileErrors=True)
-            with redirect_stderr(None):
-                names = font['name'].names
-            families = set()
-            for x in names:
-                if x.nameID == 1 or x.nameID == 16:
-                    try:
-                        families.add(x.toUnicode())
-                    except UnicodeDecodeError:
-                        families.add(x.string.decode(errors='ignore'))
-            # print("font_name:" + str(families))
-            return families
+    def _ensure_linux_font(self, path):
+        """把包内字体注册进 fontconfig（系统无旗黑时由库运行时安装）。"""
+        import os
+        import shutil
+        import subprocess
+        path = Path(path)
+        if not path.is_file():
+            print("Linux font installation failed: " + str(path) + " (font file not found)")
+            return False
+        families = self._font_families_from_file(path)
+        try:
+            out = subprocess.check_output(
+                ["fc-list", "-f", "%{family}\n"],
+                stderr=subprocess.DEVNULL,
+                universal_newlines=True,
+            )
+            available = {
+                family.strip()
+                for line in out.splitlines()
+                for family in line.split(",")
+                if family.strip()
+            }
+            if families & available:
+                return True
+        except (OSError, subprocess.CalledProcessError):
+            pass
 
-        families = font_name(path)
+        try:
+            dest = self._linux_font_dest(path)
+            print("Installing Linux font: " + str(dest))
+            if not dest.is_file() or dest.stat().st_size != path.stat().st_size:
+                shutil.copy2(path, dest)
+            subprocess.run(
+                ["fc-cache", "-f", str(dest.parent)],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True,
+            )
+            print("Linux font installation succeeded: " + str(dest))
+            return True
+        except (OSError, subprocess.CalledProcessError) as e:
+            detail = str(e)
+            if isinstance(e, subprocess.CalledProcessError) and e.output:
+                detail += ": " + e.output.strip()
+            print("Linux font installation failed: " + path.name + ": " + detail)
+            return False
+
+    def load_font(self, path):
+        import os
+        import shutil
+
+        families = self._font_families_from_file(path)
+        preferred = next(iter(families), Path(path).stem)
         tk_font_families = font.families()
         for family in families:
             if family in tk_font_families:
                 return family
-        import shutil
+
+        marker = "UNIHIKER_FONT_REEXEC_" + Path(path).name
         if platform.system() == "Linux":
-            Path.mkdir(Path.home()/".fonts", exist_ok=True)
-            shutil.copy(path, Path.home()/".fonts")
+            if not self._ensure_linux_font(path):
+                print("Font installation unavailable, using fallback for: " + preferred)
+                return preferred
+            # 已在创建 Tk 前装过；若仍不可见，最多重启一次（带环境变量守卫防死循环）
+            if os.environ.get(marker):
+                print("Font installed but not visible to Tk yet, using: " + preferred)
+                return preferred
+            os.environ[marker] = "1"
             print("Install font into Linux")
             time.sleep(0.5)
             os.execl(sys.executable, sys.executable, *sys.argv)
